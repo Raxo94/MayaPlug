@@ -31,6 +31,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="maya_includes.h" />
+    <ClInclude Include="PluginHeader.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{458EE0C1-EC80-4737-91E8-003EBA783BD0}</ProjectGuid>
