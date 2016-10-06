@@ -25,26 +25,49 @@ void NameChangeFunc(MObject& Node, const MString & str, void* clientData)
 	MGlobal::displayInfo("YOUR Favorite Anime Character Says NAMES HAVE BEEN CHANGED");
 }
 
-void InitialFunc(MObject& node, void *clientData)
+
+void MeshChangedFunc(MNodeMessage::AttributeMessage msg, MPlug & plug, MPlug & otherPlug, void* clientData)
+{
+	MGlobal::displayInfo("GURREN LAGGAN IS HERE AND YOUR MESH...IT IS DIFFERENT");
+}
+void InitialFunc(MObject& node, void *clientData) 
 {
 	//lights, Textures
 	if (node.hasFn(MFn::kMesh))
 	{	
+		//MGlobal::displayInfo(node.);
 		MStatus res;
-		MFnMesh mymesh(node, &res);
-		
-		if (res==MStatus::kSuccess)
+		//MFnTransform(node).child(0),NULL;
+		MDagPath path;
+
+		res = MDagPath::getAPathTo(node, path);
+		res = path.extendToShape();
+
+		node = path.node();
+
+
+
+
+		//MDagPath::extendToShape()
+		MFnMesh mymwesh(node, &res);
+		MGlobal::displayInfo(res.errorString());
+		if (res==true)
 		{
 			MGlobal::displayInfo("\nYES. APPARANTLY THIS IS WHAT A TRUE MESH SHOULD BE\n");
+			MGlobal::displayInfo("Vocaloid Maya says a Mesh has been created");
+			MCallbackId NameChangedCallback = MNodeMessage::addNameChangedCallback(node, NameChangeFunc, NULL, &res);
+			MCallbackId MeshChangedCallback = MNodeMessage::addAttributeChangedCallback(node, MeshChangedFunc, NULL, &res);
+			MyCallbacks.append(NameChangedCallback);
+			MyCallbacks.append(MeshChangedCallback);
 		}
 		else
 		{
+			MGlobal::displayInfo(res.errorString());
 			MGlobal::displayInfo("\nWHAT!!!THE NODE WAS NOT TRUE MESHIAN");
 		}
 
-		MGlobal::displayInfo("Vocaloid Maya says a Mesh has been created");
-		MCallbackId NameChangedCallback = MNodeMessage::addNameChangedCallback(node, NameChangeFunc, NULL, &res);
-		MyCallbacks.append(NameChangedCallback);
+		
+		
 	}
 
 }
@@ -65,8 +88,6 @@ EXPORT MStatus initializePlugin(MObject obj)
 	}
 	
 	//make a callback function here.
-
-	MObject Node;
 
 	MCallbackId NodeCreatedCallback = MDGMessage::addNodeAddedCallback(InitialFunc, kDefaultNodeType, NULL, &res);
 	if(res==MStatus::kSuccess)
