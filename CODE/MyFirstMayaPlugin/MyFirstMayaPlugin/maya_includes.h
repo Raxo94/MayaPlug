@@ -17,6 +17,7 @@
 #include <maya/MVector.h>
 #include <maya/MItDag.h>
 #include <maya/MFnCamera.h>
+#include <maya/MFnAttribute.h>
 #include <maya/M3dView.h>
 #include <maya/MItMeshPolygon.h>
 #include <maya/MPlugArray.h>

@@ -7,6 +7,13 @@ using namespace std;
 
 MCallbackIdArray MyCallbacks;
 
+void timerUpdateFunc(float elapsedTime, float lastTime, void* clientData)
+{
+	MString sa;
+	sa += elapsedTime;
+	MGlobal::displayInfo(sa);
+
+}
 
 void SetCallbackExistingNodes(MObject& Node, const MString & str, void* clientData)
 {
@@ -28,46 +35,74 @@ void NameChangeFunc(MObject& Node, const MString & str, void* clientData)
 
 void MeshChangedFunc(MNodeMessage::AttributeMessage msg, MPlug & plug, MPlug & otherPlug, void* clientData)
 {
-	MGlobal::displayInfo("GURREN LAGGAN IS HERE AND YOUR MESH...IT IS DIFFERENT");
+	MStatus res;
+	//Hexadecimal, all new numbers are flags & checks against it. | is used to add flags.
+	if (msg & MNodeMessage::kAttributeSet && !plug.isArray() && plug.isElement()) 	
+	{
+		if (res == MStatus::kSuccess)
+		{
+			MObject obj = plug.node(&res);
+			if (res == MStatus::kSuccess)
+			{
+				MFnMesh meshFn(obj, &res);
+				
+					MPoint aPoint;
+					MFnAttribute fnAttr(plug.attribute());
+					fnAttr.type();
+					meshFn.getPoint(plug.logicalIndex(), aPoint, MSpace::kObject);
+					//fnAttr(plug.attribute());
+			}
+		//MGlobal::displayInfo("Vertex Was Moved");
+
+	
+	}
+	//MPoint vertex;
+	//plug.getValue(vertex);
+	
+
+	
+}
+
+void TransformChangedFunc(MObject& transformNode, MDagMessage::MatrixModifiedFlags& modified, void *clientData)
+{
+	MGlobal::displayInfo("Node is a transform and callback is a success");
 }
 void InitialFunc(MObject& node, void *clientData) 
 {
 	//lights, Textures
+	MStatus res;
 	if (node.hasFn(MFn::kMesh))
 	{	
-		//MGlobal::displayInfo(node.);
-		MStatus res;
-		//MFnTransform(node).child(0),NULL;
-		MDagPath path;
-
-		res = MDagPath::getAPathTo(node, path);
-		res = path.extendToShape();
-
-		node = path.node();
-
-
-
-
-		//MDagPath::extendToShape()
-		MFnMesh mymwesh(node, &res);
-		MGlobal::displayInfo(res.errorString());
-		if (res==true)
-		{
-			MGlobal::displayInfo("\nYES. APPARANTLY THIS IS WHAT A TRUE MESH SHOULD BE\n");
-			MGlobal::displayInfo("Vocaloid Maya says a Mesh has been created");
-			MCallbackId NameChangedCallback = MNodeMessage::addNameChangedCallback(node, NameChangeFunc, NULL, &res);
-			MCallbackId MeshChangedCallback = MNodeMessage::addAttributeChangedCallback(node, MeshChangedFunc, NULL, &res);
-			MyCallbacks.append(NameChangedCallback);
-			MyCallbacks.append(MeshChangedCallback);
-		}
-		else
-		{
-			MGlobal::displayInfo(res.errorString());
-			MGlobal::displayInfo("\nWHAT!!!THE NODE WAS NOT TRUE MESHIAN");
-		}
-
 		
 		
+		MCallbackId NameChangedCallback = MNodeMessage::addNameChangedCallback(node, NameChangeFunc, NULL, &res);
+		MCallbackId MeshChangedCallback = MNodeMessage::addAttributeChangedCallback(node, MeshChangedFunc, NULL, &res);
+		MyCallbacks.append(NameChangedCallback);
+		MyCallbacks.append(MeshChangedCallback);
+
+		//MFnMesh mymesh(MFnTransform(node).child(0), &res); DAVID
+		//MGlobal::displayInfo(mymesh.name());
+
+
+		//MFnMesh mymesh(node, &res);						CHRISTOFFER
+		//MGlobal::displayInfo(mymesh.name());
+
+		//MGlobal::displayInfo("\nYES. APPARANTLY THIS IS WHAT A TRUE MESH SHOULD BE\n");
+		//MGlobal::displayInfo("Vocaloid Maya says a Mesh has been created");
+		
+	}
+
+	if (node.hasFn(MFn::kTransform))
+	{
+		MFnTransform transformNode(node);
+		MDagPath NodePath = MDagPath::getAPathTo(transformNode.child(0));
+
+
+		MCallbackId TranformChanged = MDagMessage::addWorldMatrixModifiedCallback(NodePath, TransformChangedFunc, NULL, &res);
+		if (res = MStatus::kSuccess)
+		{
+			MyCallbacks.append(TranformChanged);
+		}
 	}
 
 }
@@ -99,13 +134,22 @@ EXPORT MStatus initializePlugin(MObject obj)
 	{
 		MGlobal::displayInfo("Callback for Node init unsuccessful");
 	}
-	//MyCallbacks.append(NameChangedCallback);
-	// end of callbacks
+
+
+	MCallbackId NodeTimerCallback = MTimerMessage::addTimerCallback(5.f,timerUpdateFunc, NULL, &res);
+	if (res == MStatus::kSuccess)
+	{
+		MGlobal::displayInfo("NodeCallBackCreatedSuccessfully");
+		MyCallbacks.append(NodeTimerCallback);
+	}
+	else
+	{
+		MGlobal::displayInfo("Callback for Node init unsuccessful");
+	}
+	
 
 	MGlobal::displayInfo("Maya plugin loaded!");
 
-	// if res == kSuccess then the plugin has been loaded,
-	// otherwise is has not.
 	return res;
 }
 
